@@ -84,6 +84,5 @@ fn main() -> std::io::Result<()> {
     };
     ppm_image.render_to_file("test.ppm")?;
 
-    println!("Hello, world2!");
     Ok(())
 }
