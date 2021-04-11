@@ -1,5 +1,6 @@
 use crate::vec3::Vec3;
 use std::ops::Add;
+use std::ops::AddAssign;
 use std::ops::Mul;
 
 #[derive(Clone, Copy, Debug)]
@@ -23,6 +24,14 @@ impl Color {
 
     pub fn hex_blue(&self) -> i32 {
         (self.blue * 255.0).round() as i32
+    }
+}
+
+impl AddAssign for Color {
+    fn add_assign(&mut self, rhs: Self) {
+        self.red = self.red + rhs.red;
+        self.green = self.green + rhs.green;
+        self.blue = self.blue + rhs.blue;
     }
 }
 
