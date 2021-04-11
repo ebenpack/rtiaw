@@ -7,7 +7,7 @@ use std::ops::MulAssign;
 use std::ops::Neg;
 use std::ops::Sub;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
