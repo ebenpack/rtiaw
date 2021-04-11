@@ -22,14 +22,15 @@ impl Vec3 {
         let len = v.len();
         *v / len
     }
-    pub fn cross(&self, rhs: &Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x * rhs.z - self.z * rhs.y,
-            y: self.y * rhs.x - self.x * rhs.z,
-            z: self.z * rhs.y - self.y * rhs.x,
-        }
     pub fn dot(v1: &Vec3, v2: &Vec3) -> f64 {
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+    }
+    pub fn cross(v1: &Vec3, v2: &Vec3) -> Vec3 {
+        Vec3::new(
+            (v1.y * v2.z) - (v1.z * v2.y),
+            (v1.z * v2.x) - (v1.x * v2.z),
+            (v1.x * v2.y) - (v1.y * v2.x),
+        )
     }
     pub fn len(&self) -> f64 {
         self.len_squared().sqrt()
