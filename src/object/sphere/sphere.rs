@@ -1,15 +1,22 @@
+use crate::material::Material;
 use crate::object::{HitRecord, Object};
 use crate::ray::Ray;
 use crate::vec3::Vec3;
+use std::sync::Arc;
 
 pub struct Sphere {
     center: Vec3,
     radius: f64,
+    pub material: Arc<dyn Material + Send + Sync>,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64) -> Sphere {
-        Sphere { center, radius }
+    pub fn new(center: Vec3, radius: f64, material: Arc<dyn Material + Send + Sync>) -> Sphere {
+        Sphere {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
@@ -39,6 +46,7 @@ impl Object for Sphere {
         rec.p = ray.at(rec.t);
         let outward_normal = (rec.p - self.center) / self.radius;
         rec.set_face_normal(ray, outward_normal);
+        rec.material = self.material.clone();
 
         true
     }
