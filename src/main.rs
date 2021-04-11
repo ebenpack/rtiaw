@@ -5,6 +5,7 @@ use crate::vec3::Vec3;
 
 mod color;
 mod image;
+mod object;
 mod ray;
 mod vec3;
 
