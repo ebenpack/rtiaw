@@ -1,3 +1,4 @@
+use crate::vec3::Vec3;
 use std::ops::Add;
 use std::ops::Mul;
 
@@ -33,6 +34,24 @@ impl Add for Color {
             green: self.green + rhs.green,
             blue: self.blue + rhs.blue,
         }
+    }
+}
+
+impl Add<Vec3> for Color {
+    type Output = Self;
+    fn add(self, rhs: Vec3) -> Self::Output {
+        Color {
+            red: self.red + rhs.x,
+            green: self.green + rhs.y,
+            blue: self.blue + rhs.z,
+        }
+    }
+}
+
+impl Add<Color> for Vec3 {
+    type Output = Color;
+    fn add(self, rhs: Color) -> Self::Output {
+        rhs + self
     }
 }
 
