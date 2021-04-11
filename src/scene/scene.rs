@@ -11,8 +11,8 @@ impl Object for Scene {
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 
-        for obj in self.objects {
-            if obj.hit(ray, t_min, t_max, rec) {
+        for obj in &self.objects {
+            if obj.hit(ray, t_min, closest_so_far, rec) {
                 hit_anything = true;
                 closest_so_far = rec.t;
             }
