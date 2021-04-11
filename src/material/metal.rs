@@ -4,7 +4,7 @@ use crate::object::HitRecord;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-struct Metal {
+pub struct Metal {
     albedo: Color,
 }
 
@@ -22,13 +22,13 @@ impl Material for Metal {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool {
-        let reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-        let new_scattered = Ray::new(rec.p, reflected);
+        let reflected = Vec3::reflect(&Vec3::unit_vector(&r_in.direction), &hit_record.normal);
+        let new_scattered = Ray::new(hit_record.p, reflected);
         scattered.direction = new_scattered.direction;
         scattered.origin = new_scattered.origin;
-        attenuation.red = albedo.red;
-        attenuation.green = albedo.green;
-        attenuation.blue = albedo.blue;
-        Vec3::dot(scattered.direction(), rec.normal) > 0.0
+        attenuation.red = self.albedo.red;
+        attenuation.green = self.albedo.green;
+        attenuation.blue = self.albedo.blue;
+        Vec3::dot(&scattered.direction, &hit_record.normal) > 0.0
     }
 }
