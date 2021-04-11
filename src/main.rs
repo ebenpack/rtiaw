@@ -4,6 +4,8 @@ use crate::object::{HitRecord, Object, Sphere};
 use crate::ray::Ray;
 use crate::scene::Scene;
 use crate::vec3::Vec3;
+use std::sync::Arc;
+use std::thread;
 
 mod color;
 mod image;
@@ -57,33 +59,89 @@ fn main() -> std::io::Result<()> {
     let viewport_width = aspect_ratio * viewport_height;
     let focal_length = 1.0;
 
-    let origin = Vec3::new(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    let lower_left_corner =
-        origin - (horizontal / 2.0) - (vertical / 2.0) - Vec3::new(0.0, 0.0, focal_length);
+    let origin = Arc::new(Vec3::new(0.0, 0.0, 0.0));
+    let horizontal = Arc::new(Vec3::new(viewport_width, 0.0, 0.0));
+    let vertical = Arc::new(Vec3::new(0.0, viewport_height, 0.0));
+    let lower_left_corner = Arc::new(
+        *origin - (*horizontal / 2.0) - (*vertical / 2.0) - Vec3::new(0.0, 0.0, focal_length),
+    );
 
-    let mut image_data = vec![];
+    let mut scene = Scene::new();
+    scene.add(Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)));
+    scene.add(Arc::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
 
-    for j in (0..image_height).rev() {
-        if j % (image_height / 10) == 0 && j != 0 {
-            println!(
-                "{}% completed",
-                (((image_height - j) as f64 / image_height as f64) * 100.0).floor()
-            );
+    let scene = Arc::new(scene);
+
+    struct Job {
+        x: i32,
+        y: i32,
+    }
+
+    struct Result {
+        x: i32,
+        y: i32,
+        color: Color,
+    }
+
+    let (job_sender, job_receiver) = crossbeam::channel::unbounded::<Job>();
+    let (result_sender, result_receiver) = crossbeam::channel::unbounded::<Result>();
+
+    let mut thread_handles = vec![];
+    for _ in 0..num_cpus::get() {
+        let job_receiver = job_receiver.clone();
+        let result_sender = result_sender.clone();
+        let scene = Arc::clone(&scene);
+        let origin = Arc::clone(&origin);
+        let horizontal = Arc::clone(&horizontal);
+        let vertical = Arc::clone(&vertical);
+        let lower_left_corner = Arc::clone(&lower_left_corner);
+
+        thread_handles.push(thread::spawn(move || {
+            while let Ok(next_job) = job_receiver.recv() {
+                let u = next_job.x as f64 / (image_width - 1) as f64;
+                let v = next_job.y as f64 / (image_height - 1) as f64;
+                let ray = Ray::new(
+                    *origin,
+                    (*lower_left_corner) + (u * &(*horizontal)) + v * &(*vertical) - (*origin),
+                );
+                let color = ray_color(&ray, &scene);
+                result_sender
+                    .send(Result {
+                        x: next_job.x,
+                        y: next_job.y,
+                        color,
+                    })
+                    .expect("Tried writing to channel, but there are no receivers!");
+            }
+        }));
+    }
+    drop(result_sender);
+
+    for y in 0..image_height {
+        for x in 0..image_width {
+            job_sender
+                .send(Job { x, y })
+                .expect("Tried writing to channel, but there are no receivers!");
         }
-        let mut row = vec![];
-        for i in 0..image_width {
-            let u = i as f64 / (image_width - 1) as f64;
-            let v = j as f64 / (image_height - 1) as f64;
-            let r = Ray::new(
-                origin,
-                lower_left_corner + u * &horizontal + v * &vertical - origin,
-            );
-            let pixel_color = ray_color(&r);
-            row.push(pixel_color)
-        }
-        image_data.push(row);
+    }
+    drop(job_sender);
+
+    for handle in thread_handles {
+        handle.join().expect("Panic occurred in thread")
+    }
+
+    let mut image_data = Vec::with_capacity((image_width * image_height) as usize);
+
+    // TODO: Improve this? fill, or something?
+    for _ in 0..(image_width * image_height) {
+        image_data.push(Color::new(0.0, 0.0, 0.0));
+    }
+
+    while let Ok(next_result) = result_receiver.recv() {
+        // Flip you. Flip you for real.
+        let y = image_height - 1 - next_result.y;
+        let index = (y * image_width + next_result.x) as usize;
+        image_data[index] = next_result.color;
     }
 
     let ppm_image = PPM {
