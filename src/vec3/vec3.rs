@@ -18,8 +18,6 @@ impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 { x, y, z }
     }
-    pub fn dot(&self, rhs: &Vec3) -> f64 {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     pub fn unit_vector(v: &Vec3) -> Vec3 {
         let len = v.len();
         *v / len
@@ -30,6 +28,8 @@ impl Vec3 {
             y: self.y * rhs.x - self.x * rhs.z,
             z: self.z * rhs.y - self.y * rhs.x,
         }
+    pub fn dot(v1: &Vec3, v2: &Vec3) -> f64 {
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
     }
     pub fn len(&self) -> f64 {
         self.len_squared().sqrt()
