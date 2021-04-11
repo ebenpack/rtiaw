@@ -62,7 +62,9 @@ fn main() -> std::io::Result<()> {
     let mut image_data = vec![];
 
     for j in (0..image_height).rev() {
-        println!("Scanlines remaining: {}", j);
+        if j % (image_height / 10) == 0 && j != 0 {
+            println!("{}% completed", (((image_height - j) as f64 / image_height as f64) * 100.0).floor());
+        }
         let mut row = vec![];
         for i in 0..image_width {
             let u = i as f64 / (image_width - 1) as f64;
