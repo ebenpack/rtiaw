@@ -54,11 +54,7 @@ impl Neg for Vec3 {
 impl Sub for Vec3 {
     type Output = Self;
     fn sub(self, rhs: Vec3) -> Self::Output {
-        Vec3 {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
-        }
+        Vec3::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
     }
 }
 
@@ -73,11 +69,7 @@ impl AddAssign for Vec3 {
 impl Add for Vec3 {
     type Output = Self;
     fn add(self, rhs: Vec3) -> Self::Output {
-        Vec3 {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
-        }
+        Vec3::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
     }
 }
 
@@ -93,11 +85,7 @@ impl Mul<Vec3> for Vec3 {
     type Output = Self;
 
     fn mul(self, rhs: Vec3) -> Self::Output {
-        Vec3 {
-            x: self.x * rhs.x,
-            y: self.y * rhs.y,
-            z: self.z * rhs.z,
-        }
+        Vec3::new(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z)
     }
 }
 
@@ -105,11 +93,7 @@ impl Mul<&Vec3> for f64 {
     type Output = Vec3;
 
     fn mul(self, rhs: &Vec3) -> Self::Output {
-        Vec3 {
-            x: self * rhs.x,
-            y: self * rhs.y,
-            z: self * rhs.x,
-        }
+        Vec3::new(self * rhs.x, self * rhs.y, self * rhs.z)
     }
 }
 
