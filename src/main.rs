@@ -8,20 +8,29 @@ mod image;
 mod ray;
 mod vec3;
 
-pub fn ray_color(ray: &Ray) -> Color {
-    let unit_direction = ray.direction.unit_vector();
+fn hit_sphere(center: &Vec3, radius: f64, r: &Ray) -> f64 {
+    let oc = r.origin - center.clone();
+    let a = r.direction.len_squared();
+    let half_b = Vec3::dot(&oc, &r.direction);
+    let c = oc.len_squared() - radius * radius;
+    let discriminant = half_b * half_b - a * c;
+
+    if discriminant < 0.0 {
+        -1.0
+    } else {
+        (-half_b - discriminant.sqrt()) / a
+    }
+}
+
+fn ray_color(ray: &Ray) -> Color {
+    let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
+    if t > 0.0 {
+        let n = Vec3::unit_vector(&(ray.at(t) - Vec3::new(0.0, 0.0, -1.0)));
+        return 0.5 * &Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0);
+    }
+    let unit_direction = Vec3::unit_vector(&ray.direction);
     let t = 0.5 * (unit_direction.y + 1.0);
-    return (1.0 - t)
-        * &Color {
-            red: 1.0,
-            green: 1.0,
-            blue: 1.0,
-        }
-        + t * &Color {
-            red: 0.5,
-            green: 0.7,
-            blue: 1.0,
-        };
+    return (1.0 - t) * &Color::new(1.0, 1.0, 1.0) + t * &Color::new(0.5, 0.7, 1.0);
 }
 
 fn main() -> std::io::Result<()> {
