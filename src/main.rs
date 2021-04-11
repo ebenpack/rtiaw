@@ -1,6 +1,8 @@
 use crate::color::Color;
 use crate::image::{Image, PPM};
+use crate::object::{HitRecord, Object, Sphere};
 use crate::ray::Ray;
+use crate::scene::Scene;
 use crate::vec3::Vec3;
 
 mod color;
@@ -24,7 +26,16 @@ fn hit_sphere(center: &Vec3, radius: f64, r: &Ray) -> f64 {
     }
 }
 
-fn ray_color(ray: &Ray) -> Color {
+fn ray_color(ray: &Ray, scene: &Scene) -> Color {
+    let mut rec = HitRecord {
+        p: Vec3::origin(),
+        normal: Vec3::origin(),
+        t: 0.0,
+        front_face: false,
+    };
+    if scene.hit(ray, 0.0, f64::INFINITY, &mut rec) {
+        return 0.5 * &(rec.normal + Color::new(1.0, 1.0, 1.0));
+    }
     let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
     if t > 0.0 {
         let n = Vec3::unit_vector(&(ray.at(t) - Vec3::new(0.0, 0.0, -1.0)));
