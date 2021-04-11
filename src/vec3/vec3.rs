@@ -107,9 +107,7 @@ impl Mul<f64> for Vec3 {
 
 impl DivAssign<f64> for Vec3 {
     fn div_assign(&mut self, rhs: f64) {
-        self.x = self.x * (1.0 / rhs);
-        self.y = self.y * (1.0 / rhs);
-        self.z = self.z * (1.0 / rhs);
+        *self *= 1.0 / rhs;
     }
 }
 
