@@ -43,7 +43,7 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: i32) -> Color {
         front_face: false,
     };
     if scene.hit(ray, 0.001, f64::INFINITY, &mut rec) {
-        let target = rec.p + rec.normal + Vec3::random_unit_vector();
+        let target = rec.p + rec.normal + Vec3::random_in_hemisphere(&rec.normal);
         return 0.5 * &ray_color(&Ray::new(rec.p.clone(), target - rec.p), &scene, depth - 1);
     }
     let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
