@@ -88,6 +88,10 @@ impl Vec3 {
         let s = 1e-8;
         self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
     }
+
+    pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+        *v - 2.0 * Vec3::dot(v, n) * n
+    }
 }
 
 impl Neg for Vec3 {
