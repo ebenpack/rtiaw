@@ -32,11 +32,12 @@ impl Vec3 {
             (v1.x * v2.y) - (v1.y * v2.x),
         )
     }
+
     pub fn len(&self) -> f64 {
         self.len_squared().sqrt()
     }
     pub fn len_squared(&self) -> f64 {
-        (self.x * self.x) + (self.y * self.y) + (self.z * self.z)
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 }
 
@@ -73,6 +74,7 @@ impl AddAssign<f64> for Vec3 {
         self.z = self.z + rhs;
     }
 }
+
 impl Add for Vec3 {
     type Output = Self;
     fn add(self, rhs: Vec3) -> Self::Output {
