@@ -1,6 +1,7 @@
 use crate::camera::Camera;
 use crate::color::Color;
 use crate::image::{Image, PPM};
+use crate::material::{Lambertian, Metal};
 use crate::object::{HitRecord, Object, Sphere};
 use crate::ray::Ray;
 use crate::scene::Scene;
@@ -42,9 +43,20 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: i32) -> Color {
         normal: Vec3::origin(),
         t: 0.0,
         front_face: false,
+        material: Arc::new(Metal::new(Color::new(0.0, 0.0, 0.0))),
     };
     if scene.hit(ray, 0.001, f64::INFINITY, &mut rec) {
-        let target = rec.p + rec.normal + Vec3::random_in_hemisphere(&rec.normal);
+        let mut scattered = Ray::new(Vec3::origin(), Vec3::origin());
+        let mut attenuation = Color::new(0.0, 0.0, 0.0);
+        if rec
+            .material
+            .scatter(&ray, &rec, &mut attenuation, &mut scattered)
+        {
+            return attenuation * ray_color(&scattered, &scene, depth - 1);
+        }
+        return Color::new(0.0, 0.0, 0.0);
+
+        let target = rec.p + rec.normal + Vec3::random_unit_vector();
         return 0.5 * &ray_color(&Ray::new(rec.p.clone(), target - rec.p), &scene, depth - 1);
     }
     let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
@@ -63,14 +75,39 @@ fn main() -> std::io::Result<()> {
     let image_width = 1200;
     let image_height = (image_width as f64 / aspect_ratio) as i32;
     let samples_per_pixel = 100;
+    let max_depth = 50;
 
     // Camera
     let camera = Arc::new(Camera::new());
 
     // Scene
     let mut scene = Scene::new();
-    scene.add(Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)));
-    scene.add(Arc::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
+
+    let material_ground = Arc::new(Lambertian::new(Color::new(0.6627, 0.9882, 0.8196)));
+    let material_center = Arc::new(Lambertian::new(Color::new(0.8862, 0.08627, 0.1647)));
+    let material_left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
+    let material_right = Arc::new(Metal::new(Color::new(0.968, 0.6627, 0.8235)));
+
+    scene.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground,
+    )));
+    scene.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, 0.0, -1.0),
+        0.5,
+        material_center,
+    )));
+    scene.add(Arc::new(Sphere::new(
+        Vec3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left,
+    )));
+    scene.add(Arc::new(Sphere::new(
+        Vec3::new(1.0, 0.0, -1.0),
+        0.5,
+        material_right,
+    )));
 
     let scene = Arc::new(scene);
 
