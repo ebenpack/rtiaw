@@ -36,7 +36,7 @@ fn ray_color(ray: &Ray) -> Color {
 fn main() -> std::io::Result<()> {
     // Image
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
+    let image_width = 1200;
     let image_height = (image_width as f64 / aspect_ratio) as i32;
 
     // Camera
