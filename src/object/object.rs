@@ -20,5 +20,5 @@ impl HitRecord {
 }
 
 pub trait Object {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, obj: &mut HitRecord) -> bool;
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
 }
