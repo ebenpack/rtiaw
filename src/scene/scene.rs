@@ -3,7 +3,7 @@ use crate::ray::Ray;
 use std::sync::Arc;
 
 pub struct Scene {
-    pub objects: Vec<Arc<Object>>,
+    pub objects: Vec<Arc<dyn Object + Send + Sync>>,
 }
 
 impl Object for Scene {
