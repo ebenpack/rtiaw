@@ -6,6 +6,16 @@ pub struct Scene {
     pub objects: Vec<Arc<dyn Object + Send + Sync>>,
 }
 
+impl Scene {
+    pub fn new() -> Scene {
+        Scene { objects: vec![] }
+    }
+
+    pub fn add(&mut self, obj: Arc<dyn Object + Send + Sync>) {
+        self.objects.push(obj);
+    }
+}
+
 impl Object for Scene {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         let mut hit_anything = false;
