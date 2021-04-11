@@ -1,9 +1,11 @@
+use crate::camera::Camera;
 use crate::color::Color;
 use crate::image::{Image, PPM};
 use crate::object::{HitRecord, Object, Sphere};
 use crate::ray::Ray;
 use crate::scene::Scene;
 use crate::vec3::Vec3;
+use rand::Rng;
 use std::sync::Arc;
 use std::thread;
 
@@ -54,19 +56,12 @@ fn main() -> std::io::Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 1200;
     let image_height = (image_width as f64 / aspect_ratio) as i32;
+    let samples_per_pixel = 100;
 
     // Camera
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let focal_length = 1.0;
+    let camera = Arc::new(Camera::new());
 
-    let origin = Arc::new(Vec3::new(0.0, 0.0, 0.0));
-    let horizontal = Arc::new(Vec3::new(viewport_width, 0.0, 0.0));
-    let vertical = Arc::new(Vec3::new(0.0, viewport_height, 0.0));
-    let lower_left_corner = Arc::new(
-        *origin - (*horizontal / 2.0) - (*vertical / 2.0) - Vec3::new(0.0, 0.0, focal_length),
-    );
-
+    // Scene
     let mut scene = Scene::new();
     scene.add(Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)));
     scene.add(Arc::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
@@ -92,25 +87,33 @@ fn main() -> std::io::Result<()> {
         let job_receiver = job_receiver.clone();
         let result_sender = result_sender.clone();
         let scene = Arc::clone(&scene);
-        let origin = Arc::clone(&origin);
-        let horizontal = Arc::clone(&horizontal);
-        let vertical = Arc::clone(&vertical);
-        let lower_left_corner = Arc::clone(&lower_left_corner);
+        let camera = Arc::clone(&camera);
 
         thread_handles.push(thread::spawn(move || {
             while let Ok(next_job) = job_receiver.recv() {
-                let u = next_job.x as f64 / (image_width - 1) as f64;
-                let v = next_job.y as f64 / (image_height - 1) as f64;
-                let ray = Ray::new(
-                    *origin,
-                    (*lower_left_corner) + (u * &(*horizontal)) + v * &(*vertical) - (*origin),
-                );
-                let color = ray_color(&ray, &scene);
+                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+
+                for _ in 0..samples_per_pixel {
+                    let rand_num1 = rand::thread_rng().gen_range(0.0..1.0);
+                    let rand_num2 = rand::thread_rng().gen_range(0.0..1.0);
+                    let u = (next_job.x as f64 + rand_num1) / (image_width as f64 - 1.0);
+                    let v = (next_job.y as f64 + rand_num2) / (image_height as f64 - 1.0);
+                    let ray = camera.get_ray(u, v);
+                    pixel_color += ray_color(&ray, &scene);
+                }
+
+                let scale = 1.0 / samples_per_pixel as f64;
+                pixel_color *= scale;
+                // TODO: Fix this bit up
+                pixel_color.red = pixel_color.red.clamp(0.0, 0.999999);
+                pixel_color.green = pixel_color.green.clamp(0.0, 0.999999);
+                pixel_color.blue = pixel_color.blue.clamp(0.0, 0.999999);
+
                 result_sender
                     .send(Result {
                         x: next_job.x,
                         y: next_job.y,
-                        color,
+                        color: pixel_color,
                     })
                     .expect("Tried writing to channel, but there are no receivers!");
             }
