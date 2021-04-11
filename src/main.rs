@@ -7,6 +7,7 @@ use crate::vec3::Vec3;
 use std::sync::Arc;
 use std::thread;
 
+mod camera;
 mod color;
 mod image;
 mod object;
