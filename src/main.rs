@@ -31,15 +31,20 @@ fn hit_sphere(center: &Vec3, radius: f64, r: &Ray) -> f64 {
     }
 }
 
-fn ray_color(ray: &Ray, scene: &Scene) -> Color {
+fn ray_color(ray: &Ray, scene: &Scene, depth: i32) -> Color {
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+
     let mut rec = HitRecord {
         p: Vec3::origin(),
         normal: Vec3::origin(),
         t: 0.0,
         front_face: false,
     };
-    if scene.hit(ray, 0.0, f64::INFINITY, &mut rec) {
-        return 0.5 * &(rec.normal + Color::new(1.0, 1.0, 1.0));
+    if scene.hit(ray, 0.001, f64::INFINITY, &mut rec) {
+        let target = rec.p + rec.normal + Vec3::random_unit_vector();
+        return 0.5 * &ray_color(&Ray::new(rec.p.clone(), target - rec.p), &scene, depth - 1);
     }
     let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
     if t > 0.0 {
@@ -99,15 +104,14 @@ fn main() -> std::io::Result<()> {
                     let u = (next_job.x as f64 + rand_num1) / (image_width as f64 - 1.0);
                     let v = (next_job.y as f64 + rand_num2) / (image_height as f64 - 1.0);
                     let ray = camera.get_ray(u, v);
-                    pixel_color += ray_color(&ray, &scene);
+                    pixel_color += ray_color(&ray, &scene, max_depth);
                 }
 
-                let scale = 1.0 / samples_per_pixel as f64;
-                pixel_color *= scale;
                 // TODO: Fix this bit up
-                pixel_color.red = pixel_color.red.clamp(0.0, 0.999999);
-                pixel_color.green = pixel_color.green.clamp(0.0, 0.999999);
-                pixel_color.blue = pixel_color.blue.clamp(0.0, 0.999999);
+                let scale = 1.0 / samples_per_pixel as f64;
+                pixel_color.red = (scale * pixel_color.red).sqrt().clamp(0.0, 0.9999999);
+                pixel_color.green = (scale * pixel_color.green).sqrt().clamp(0.0, 0.9999999);
+                pixel_color.blue = (scale * pixel_color.blue).sqrt().clamp(0.0, 0.9999999);
 
                 result_sender
                     .send(Result {
