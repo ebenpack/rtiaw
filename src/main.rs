@@ -43,7 +43,7 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: i32) -> Color {
         normal: Vec3::origin(),
         t: 0.0,
         front_face: false,
-        material: Arc::new(Metal::new(Color::new(0.0, 0.0, 0.0))),
+        material: Arc::new(Metal::new(Color::new(0.0, 0.0, 0.0), 1.0)),
     };
     if scene.hit(ray, 0.001, f64::INFINITY, &mut rec) {
         let mut scattered = Ray::new(Vec3::origin(), Vec3::origin());
@@ -55,9 +55,6 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: i32) -> Color {
             return attenuation * ray_color(&scattered, &scene, depth - 1);
         }
         return Color::new(0.0, 0.0, 0.0);
-
-        let target = rec.p + rec.normal + Vec3::random_unit_vector();
-        return 0.5 * &ray_color(&Ray::new(rec.p.clone(), target - rec.p), &scene, depth - 1);
     }
     let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
     if t > 0.0 {
@@ -85,8 +82,8 @@ fn main() -> std::io::Result<()> {
 
     let material_ground = Arc::new(Lambertian::new(Color::new(0.6627, 0.9882, 0.8196)));
     let material_center = Arc::new(Lambertian::new(Color::new(0.8862, 0.08627, 0.1647)));
-    let material_left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
-    let material_right = Arc::new(Metal::new(Color::new(0.968, 0.6627, 0.8235)));
+    let material_left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.0));
+    let material_right = Arc::new(Metal::new(Color::new(0.968, 0.6627, 0.8235), 1.0));
 
     scene.add(Arc::new(Sphere::new(
         Vec3::new(0.0, -100.5, -1.0),
