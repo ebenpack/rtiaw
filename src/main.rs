@@ -55,7 +55,10 @@ fn main() -> std::io::Result<()> {
 
     for j in (0..image_height).rev() {
         if j % (image_height / 10) == 0 && j != 0 {
-            println!("{}% completed", (((image_height - j) as f64 / image_height as f64) * 100.0).floor());
+            println!(
+                "{}% completed",
+                (((image_height - j) as f64 / image_height as f64) * 100.0).floor()
+            );
         }
         let mut row = vec![];
         for i in 0..image_width {
