@@ -9,7 +9,7 @@ pub struct Lambertian {
 }
 
 impl Lambertian {
-    fn new(albedo: Color) -> Lambertian {
+    pub fn new(albedo: Color) -> Lambertian {
         Lambertian { albedo }
     }
 }
