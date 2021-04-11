@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Div;
@@ -18,6 +19,7 @@ impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 { x, y, z }
     }
+
     pub fn origin() -> Vec3 {
         Vec3 {
             x: 0.0,
@@ -25,13 +27,16 @@ impl Vec3 {
             z: 0.0,
         }
     }
+
     pub fn unit_vector(v: &Vec3) -> Vec3 {
         let len = v.len();
         *v / len
     }
+
     pub fn dot(v1: &Vec3, v2: &Vec3) -> f64 {
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
     }
+
     pub fn cross(v1: &Vec3, v2: &Vec3) -> Vec3 {
         Vec3::new(
             (v1.y * v2.z) - (v1.z * v2.y),
@@ -43,8 +48,31 @@ impl Vec3 {
     pub fn len(&self) -> f64 {
         self.len_squared().sqrt()
     }
+
     pub fn len_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
+    }
+
+    pub fn random(min: f64, max: f64) -> Vec3 {
+        let x = rand::thread_rng().gen_range(min..max);
+        let y = rand::thread_rng().gen_range(min..max);
+        let z = rand::thread_rng().gen_range(min..max);
+        Vec3::new(x, y, z)
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        loop {
+            let v = Vec3::random(-1.0, 1.0);
+            if v.len_squared() >= 1.0 {
+                continue;
+            } else {
+                return v;
+            }
+        }
+    }
+
+    pub fn random_unit_vector() -> Vec3 {
+        Vec3::unit_vector(&Vec3::random_in_unit_sphere())
     }
 }
 
