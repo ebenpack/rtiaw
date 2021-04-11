@@ -1,4 +1,3 @@
-use crate::color::Color;
 use crate::vec3::Vec3;
 
 pub struct Ray {
