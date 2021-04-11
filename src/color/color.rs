@@ -9,6 +9,9 @@ pub struct Color {
 }
 
 impl Color {
+    pub fn new(red: f64, green: f64, blue: f64) -> Color {
+        Color { red, green, blue }
+    }
     pub fn hex_red(&self) -> i32 {
         (self.red * 255.0).round() as i32
     }
