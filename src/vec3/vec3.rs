@@ -18,6 +18,8 @@ impl Vec3 {
     pub fn unit_vector(&self) -> Vec3 {
         let len = self.len();
         *self / len
+    pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
+        Vec3 { x, y, z }
     }
     pub fn dot(&self, rhs: &Vec3) -> f64 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
