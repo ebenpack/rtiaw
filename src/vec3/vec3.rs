@@ -118,3 +118,151 @@ impl Div<f64> for Vec3 {
         (1.0 / rhs) * &self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    pub fn nearly_equal(a: f64, b: f64) -> bool {
+        let abs_a = a.abs();
+        let abs_b = b.abs();
+        let diff = (a - b).abs();
+
+        if a == b {
+            true
+        } else if a == 0.0 || b == 0.0 || diff < f64::MIN_POSITIVE {
+            diff < (f64::EPSILON * f64::MIN_POSITIVE)
+        } else {
+            (diff / f64::min(abs_a + abs_b, f64::MAX)) < f64::EPSILON
+        }
+    }
+
+    #[test]
+    fn test_add() {
+        let vec1 = Vec3::new(1.0, 1.0, 1.0);
+        let vec2 = Vec3::new(10.0, 10.0, 10.0);
+        let result = vec1 + vec2;
+
+        assert_eq!(result, Vec3::new(11.0, 11.0, 11.0));
+
+        let vec1 = Vec3::new(1.0, 1.0, 1.0);
+        let vec2 = Vec3::new(-1.0, -1.0, -1.0);
+        let result = vec1 + (vec2);
+        assert_eq!(result, Vec3::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_subtract() {
+        let vec1 = Vec3::new(11.0, 11.0, 11.0);
+        let vec2 = Vec3::new(1.0, 1.0, 1.0);
+        let result = vec1 - vec2;
+        assert_eq!(result, Vec3::new(10.0, 10.0, 10.0));
+
+        let vec1 = Vec3::new(1.0, 1.0, 1.0);
+        let vec2 = Vec3::new(1.0, 1.0, 1.0);
+        let result = vec1 - vec2;
+        assert_eq!(result, Vec3::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_len() {
+        let vec = Vec3::new(1.0, 0.0, 0.0);
+        assert_eq!(vec.len(), 1.0);
+
+        let vec = Vec3::new(0.0, 1.0, 0.0);
+        assert_eq!(vec.len(), 1.0);
+
+        let vec = Vec3::new(0.0, 0.0, 1.0);
+        assert_eq!(vec.len(), 1.0);
+
+        let vec = Vec3::new(1.0, 1.0, 1.0);
+        assert!(nearly_equal(vec.len(), (3.0 as f64).sqrt()));
+
+        let vec = Vec3::new(-1.0, -1.0, -1.0);
+        assert!(nearly_equal(vec.len(), (3.0 as f64).sqrt()));
+
+        let vec = Vec3::new(10.0, 10.0, 10.0);
+        assert!(nearly_equal(vec.len(), (300.0 as f64).sqrt()));
+    }
+    #[test]
+    fn test_len_squared() {
+        let vec = Vec3::new(1.0, 0.0, 0.0);
+        assert_eq!(vec.len_squared(), 1.0);
+
+        let vec = Vec3::new(0.0, 1.0, 0.0);
+        assert_eq!(vec.len_squared(), 1.0);
+
+        let vec = Vec3::new(0.0, 0.0, 1.0);
+        assert_eq!(vec.len_squared(), 1.0);
+
+        let vec = Vec3::new(1.0, 1.0, 1.0);
+        assert_eq!(vec.len_squared(), 3.0);
+
+        let vec = Vec3::new(-1.0, -1.0, -1.0);
+        assert_eq!(vec.len_squared(), 3.0);
+
+        let vec = Vec3::new(10.0, 10.0, 10.0);
+        assert_eq!(vec.len_squared(), 300.0);
+    }
+
+    #[test]
+    fn test_dot() {
+        // let vec1 = Vec3::new(1.0, 1.0, 1.0);
+        // let vec2 = Vec3::new(1.0, 1.0, 1.0);
+        // let vec3 = Vec3::new(10.0, 10.0, 10.0);
+        // let vec4 = Vec3::new(11.0, 11.0, 11.0);
+        // let vec5 = Vec3::new(-1.0, -1.0, -1.0);
+
+        let vec1 = Vec3::new(1.0, 1.0, 1.0);
+        let vec2 = Vec3::new(1.0, 1.0, 1.0);
+        assert_eq!(Vec3::dot(&vec1, &vec2), 3.0);
+
+        let vec1 = Vec3::new(1.0, 1.0, 1.0);
+        let vec2 = Vec3::new(10.0, 10.0, 10.0);
+        assert_eq!(Vec3::dot(&vec1, &vec2), 30.0);
+
+        let vec1 = Vec3::new(10.0, 10.0, 10.0);
+        let vec2 = Vec3::new(-1.0, -1.0, -1.0);
+        assert_eq!(Vec3::dot(&vec1, &vec2), -30.0);
+
+        let vec1 = Vec3::new(1.0, 0.0, 0.0);
+        let vec2 = Vec3::new(0.0, 1.0, 0.0);
+        assert_eq!(Vec3::dot(&vec1, &vec2), 0.0);
+
+        let vec1 = Vec3::new(1.0, 0.0, 0.0);
+        let vec2 = Vec3::new(0.0, 0.0, 1.0);
+        assert_eq!(Vec3::dot(&vec1, &vec2), 0.0);
+
+        let vec1 = Vec3::new(0.0, 1.0, 0.0);
+        let vec2 = Vec3::new(0.0, 0.0, 1.0);
+        assert_eq!(Vec3::dot(&vec1, &vec2), 0.0);
+    }
+    #[test]
+    fn test_cross() {
+        let vec_x = Vec3::new(1.0, 0.0, 0.0);
+        let vec_y = Vec3::new(0.0, 1.0, 0.0);
+        let vec_z = Vec3::new(0.0, 0.0, 1.0);
+
+        assert_eq!(Vec3::cross(&vec_x, &vec_y), vec_z);
+        assert_eq!(Vec3::cross(&vec_y, &vec_z), vec_x);
+        assert_eq!(Vec3::cross(&vec_z, &vec_x), vec_y);
+
+        // assert.ok(!vec_y.cross(vec_x).equal(vec_z));
+        // assert.ok(!vec_z.cross(vec_y).equal(vec_x));
+        // assert.ok(!vec_x.cross(vec_z).equal(vec_y));
+        // assert_eq!(vec_x.cross(vec_y).z, 1);
+        // assert_eq!(vec_y.cross(vec_z).x, 1);
+        // assert_eq!(vec_z.cross(vec_x).y, 1);
+        // assert_eq!(t1.x, 1);
+        // assert_eq!(t1.y, -5);
+        // assert_eq!(t1.z, 3);
+    }
+
+    #[test]
+    fn test_negate() {
+        let vec = Vec3::new(1.0, 1.0, 1.0);
+        let neg_vec = Vec3::new(-1.0, -1.0, -1.0);
+        assert_eq!(-vec, neg_vec);
+        assert_eq!(-(-vec), vec);
+    }
+}
