@@ -2,6 +2,7 @@ use crate::vec3::Vec3;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Mul;
+use std::ops::MulAssign;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Color {
@@ -61,6 +62,14 @@ impl Add<Color> for Vec3 {
     type Output = Color;
     fn add(self, rhs: Color) -> Self::Output {
         rhs + self
+    }
+}
+
+impl MulAssign<f64> for Color {
+    fn mul_assign(&mut self, rhs: f64) {
+        self.red = self.red * rhs;
+        self.green = self.green * rhs;
+        self.blue = self.blue * rhs;
     }
 }
 
