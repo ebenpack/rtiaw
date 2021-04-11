@@ -12,6 +12,7 @@ use std::thread;
 mod camera;
 mod color;
 mod image;
+mod material;
 mod object;
 mod ray;
 mod scene;
