@@ -1,4 +1,5 @@
 use crate::vec3::Vec3;
+use rand::Rng;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Mul;
@@ -15,6 +16,7 @@ impl Color {
     pub fn new(red: f64, green: f64, blue: f64) -> Color {
         Color { red, green, blue }
     }
+
     pub fn hex_red(&self) -> i32 {
         (self.red * 255.0).round() as i32
     }
@@ -25,6 +27,13 @@ impl Color {
 
     pub fn hex_blue(&self) -> i32 {
         (self.blue * 255.0).round() as i32
+    }
+
+    pub fn random(min: f64, max: f64) -> Color {
+        let red = rand::thread_rng().gen_range(min..max);
+        let green = rand::thread_rng().gen_range(min..max);
+        let blue = rand::thread_rng().gen_range(min..max);
+        Color::new(red, green, blue)
     }
 }
 
