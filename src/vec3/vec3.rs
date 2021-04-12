@@ -84,6 +84,19 @@ impl Vec3 {
         }
     }
 
+    pub fn random_in_unit_disk() -> Vec3 {
+        loop {
+            let rand_num1 = rand::thread_rng().gen_range(-1.0..1.0);
+            let rand_num2 = rand::thread_rng().gen_range(-1.0..1.0);
+            let p = Vec3::new(rand_num1, rand_num2, 0.0);
+            if p.len_squared() >= 1.0 {
+                continue;
+            } else {
+                return p;
+            }
+        }
+    }
+
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;
         self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
