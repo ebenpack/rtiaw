@@ -6,3 +6,6 @@ pub use lambertian::Lambertian;
 
 mod metal;
 pub use metal::Metal;
+
+mod dielectric;
+pub use dielectric::Dielectric;
