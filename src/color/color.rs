@@ -37,6 +37,16 @@ impl Color {
     }
 }
 
+impl Default for Color {
+    fn default() -> Self {
+        Color {
+            red: 0.0,
+            green: 0.0,
+            blue: 0.0,
+        }
+    }
+}
+
 impl AddAssign for Color {
     fn add_assign(&mut self, rhs: Self) {
         self.red = self.red + rhs.red;
