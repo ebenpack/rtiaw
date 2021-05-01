@@ -82,6 +82,14 @@ impl MulAssign<f64> for Color {
     }
 }
 
+impl MulAssign for Color {
+    fn mul_assign(&mut self, rhs: Color) {
+        self.red = self.red * rhs.red;
+        self.green = self.green * rhs.green;
+        self.blue = self.blue * rhs.blue;
+    }
+}
+
 impl Mul<Color> for Color {
     type Output = Self;
 

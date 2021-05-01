@@ -33,37 +33,50 @@ fn hit_sphere(center: &Vec3, radius: f64, r: &Ray) -> f64 {
     }
 }
 
-fn ray_color(ray: &Ray, scene: &Scene, depth: i32) -> Color {
-    if depth <= 0 {
-        return Color::new(0.0, 0.0, 0.0);
-    }
-
-    let mut rec = HitRecord {
+fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Color {
+    let mut hit_record = HitRecord {
         p: Vec3::origin(),
         normal: Vec3::origin(),
         t: 0.0,
         front_face: false,
         material: Arc::new(Metal::new(Color::new(0.0, 0.0, 0.0), 1.0)),
     };
-    if scene.hit(ray, 0.001, f64::INFINITY, &mut rec) {
-        let mut scattered = Ray::new(Vec3::origin(), Vec3::origin());
-        let mut attenuation = Color::new(0.0, 0.0, 0.0);
-        if rec
-            .material
-            .scatter(&ray, &rec, &mut attenuation, &mut scattered)
-        {
-            return attenuation * ray_color(&scattered, &scene, depth - 1);
+    let mut ray = ray.clone();
+    let mut depth = depth;
+    let mut color = Color::new(1.0, 1.0, 1.0);
+
+    loop {
+        if depth <= 0 {
+            color *= Color::new(0.0, 0.0, 0.0);
+            return color;
         }
-        return Color::new(0.0, 0.0, 0.0);
+        if scene.hit(&ray, 0.001, f64::INFINITY, &mut hit_record) {
+            let mut scattered = Ray::new(Vec3::origin(), Vec3::origin());
+            let mut attenuation = Color::new(0.0, 0.0, 0.0);
+            if hit_record
+                .material
+                .scatter(&ray, &hit_record, &mut attenuation, &mut scattered)
+            {
+                color *= attenuation;
+                ray = scattered.clone();
+                depth -= 1;
+                continue;
+            }
+            color += Color::new(0.0, 0.0, 0.0);
+            return color;
+        }
+        let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, &ray);
+        if t > 0.0 {
+            let n = Vec3::unit_vector(&(ray.at(t) - Vec3::new(0.0, 0.0, -1.0)));
+
+            color *= 0.5 * &Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0);
+            return color;
+        }
+        let unit_direction = Vec3::unit_vector(&ray.direction);
+        let t = 0.5 * (unit_direction.y + 1.0);
+        color *= (1.0 - t) * &Color::new(1.0, 1.0, 1.0) + t * &Color::new(0.5, 0.7, 1.0);
+        return color;
     }
-    let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
-    if t > 0.0 {
-        let n = Vec3::unit_vector(&(ray.at(t) - Vec3::new(0.0, 0.0, -1.0)));
-        return 0.5 * &Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0);
-    }
-    let unit_direction = Vec3::unit_vector(&ray.direction);
-    let t = 0.5 * (unit_direction.y + 1.0);
-    return (1.0 - t) * &Color::new(1.0, 1.0, 1.0) + t * &Color::new(0.5, 0.7, 1.0);
 }
 
 fn random_scene() -> Scene {
