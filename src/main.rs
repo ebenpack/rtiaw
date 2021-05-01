@@ -8,7 +8,7 @@ use crate::scene::Scene;
 use crate::vec3::Vec3;
 use clap::App;
 use rand::Rng;
-use std::io::{Error as StdError, ErrorKind as StdErrorKind, Write};
+use std::io::{Error as IoError, ErrorKind as IoErrorKind, Result as IoResult};
 use std::sync::Arc;
 use std::thread;
 
@@ -147,7 +147,7 @@ fn random_scene() -> Scene {
     scene
 }
 
-fn main() -> std::io::Result<()> {
+fn main() -> IoResult<()> {
     // Image
     let yaml = load_yaml!("cli.yml");
     let matches = App::from(yaml).get_matches();
@@ -260,7 +260,6 @@ fn main() -> std::io::Result<()> {
         if processed % (percent * 5) == 0 {
             let percentage = (100.0 * (processed as f64 / total as f64)).floor() as i32;
             println!("{}% completed", percentage);
-            std::io::stdout().flush().unwrap();
         }
         // Flip you. Flip you for real.
         let y = image_height - 1 - next_result.y;
