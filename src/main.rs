@@ -245,12 +245,10 @@ fn main() -> IoResult<()> {
     }
     drop(job_sender);
 
-    let mut image_data = Vec::with_capacity((image_width * image_height) as usize);
+    let image_data_size = (image_width * image_height) as usize;
+    let mut image_data = Vec::<Color>::with_capacity(image_data_size);
 
-    // TODO: Improve this? fill, or something?
-    for _ in 0..(image_width * image_height) {
-        image_data.push(Color::new(0.0, 0.0, 0.0));
-    }
+    image_data.resize_with(image_data_size, Default::default);
 
     let mut processed = 0;
     let total = image_width * image_height;
