@@ -161,8 +161,13 @@ fn main() -> IoResult<()> {
     let samples_per_pixel = matches.value_of_t::<u32>("samples").unwrap_or(500);
     let max_depth = matches.value_of_t::<u32>("depth").unwrap_or(200).max(500);
     let output_file = matches
-        .value_of_t::<String>("OUTPUT")
-        .map_err(|_e| StdError::new(StdErrorKind::InvalidInput, "Must provide output file"))?;
+        .value_of_os("OUTPUT")
+        .map(|f| f.to_str())
+        .flatten()
+        .ok_or(IoError::new(
+            IoErrorKind::InvalidInput,
+            "Must provide output file".to_string(),
+        ))?;
 
     // Camera
     let look_from = Vec3::new(13.0, 2.0, 3.0);
@@ -277,7 +282,7 @@ fn main() -> IoResult<()> {
         image_height,
         image_data,
     };
-    ppm_image.render_to_file(&output_file)?;
+    ppm_image.render_to_file(output_file)?;
 
     Ok(())
 }
