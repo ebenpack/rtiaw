@@ -6,9 +6,14 @@ use crate::object::{HitRecord, Object, Sphere};
 use crate::ray::Ray;
 use crate::scene::Scene;
 use crate::vec3::Vec3;
+use clap::App;
 use rand::Rng;
+use std::io::{Error as StdError, ErrorKind as StdErrorKind, Write};
 use std::sync::Arc;
 use std::thread;
+
+#[macro_use]
+extern crate clap;
 
 mod camera;
 mod color;
@@ -144,11 +149,20 @@ fn random_scene() -> Scene {
 
 fn main() -> std::io::Result<()> {
     // Image
-    let aspect_ratio = 3.0 / 2.0;
-    let image_width = 1200;
-    let image_height = (image_width as f64 / aspect_ratio) as i32;
-    let samples_per_pixel = 500;
-    let max_depth = 200;
+    let yaml = load_yaml!("cli.yml");
+    let matches = App::from(yaml).get_matches();
+
+    // TODO: Exit on ill-typed args
+    let aspect_ratio = matches
+        .value_of_t::<f64>("aspect-ratio")
+        .unwrap_or(3.0 / 2.0);
+    let image_width = matches.value_of_t::<u32>("image-width").unwrap_or(300);
+    let image_height = (image_width as f64 / aspect_ratio) as u32;
+    let samples_per_pixel = matches.value_of_t::<u32>("samples").unwrap_or(500);
+    let max_depth = matches.value_of_t::<u32>("depth").unwrap_or(200).max(500);
+    let output_file = matches
+        .value_of_t::<String>("OUTPUT")
+        .map_err(|_e| StdError::new(StdErrorKind::InvalidInput, "Must provide output file"))?;
 
     // Camera
     let look_from = Vec3::new(13.0, 2.0, 3.0);
@@ -171,13 +185,13 @@ fn main() -> std::io::Result<()> {
     let scene = Arc::new(random_scene());
 
     struct Job {
-        x: i32,
-        y: i32,
+        x: u32,
+        y: u32,
     }
 
     struct Result {
-        x: i32,
-        y: i32,
+        x: u32,
+        y: u32,
         color: Color,
     }
 
@@ -231,10 +245,6 @@ fn main() -> std::io::Result<()> {
     }
     drop(job_sender);
 
-    for handle in thread_handles {
-        handle.join().expect("Panic occurred in thread")
-    }
-
     let mut image_data = Vec::with_capacity((image_width * image_height) as usize);
 
     // TODO: Improve this? fill, or something?
@@ -242,11 +252,27 @@ fn main() -> std::io::Result<()> {
         image_data.push(Color::new(0.0, 0.0, 0.0));
     }
 
+    let mut processed = 0;
+    let total = image_width * image_height;
+    let percent = (total as f64 / 100.0).ceil() as i32;
     while let Ok(next_result) = result_receiver.recv() {
+        processed += 1;
+        if processed % (percent * 5) == 0 {
+            let percentage = (100.0 * (processed as f64 / total as f64)).floor() as i32;
+            println!("{}% completed", percentage);
+            std::io::stdout().flush().unwrap();
+        }
         // Flip you. Flip you for real.
         let y = image_height - 1 - next_result.y;
         let index = (y * image_width + next_result.x) as usize;
+        // TODO: stream data to the file... somehow
+        // stuff's gonna be out of order though, so this
+        // will likely be a bit messy
         image_data[index] = next_result.color;
+    }
+
+    for handle in thread_handles {
+        handle.join().expect("Panic occurred in thread")
     }
 
     let ppm_image = PPM {
@@ -254,7 +280,7 @@ fn main() -> std::io::Result<()> {
         image_height,
         image_data,
     };
-    ppm_image.render_to_file("test.ppm")?;
+    ppm_image.render_to_file(&output_file)?;
 
     Ok(())
 }

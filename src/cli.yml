@@ -1,0 +1,29 @@
+name: rtiaw
+version: "0.1"
+author: ebenpack
+about: Multi-threaded raytracer
+args:
+  - aspect-ratio:
+      short: a
+      long: aspect-ratio
+      help: Aspect ratio
+      takes_value: true
+  - image-width:
+      short: w
+      long: image-width
+      help: Output image width
+      takes_value: true
+  - samples:
+      short: s
+      long: samples
+      help: Samples per pixel
+      takes_value: true
+  - depth:
+      short: d
+      long: depth
+      help: Maximum ray recursion depth
+      takes_value: true
+  - OUTPUT:
+      help: Sets the output file to save
+      required: true
+      index: 1
