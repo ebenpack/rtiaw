@@ -3,8 +3,8 @@ use crate::image::Image;
 use itertools::Itertools;
 
 pub struct PPM {
-    pub image_width: i32,
-    pub image_height: i32,
+    pub image_width: u32,
+    pub image_height: u32,
     pub image_data: Vec<Color>,
 }
 
