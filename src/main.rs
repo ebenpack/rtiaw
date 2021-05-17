@@ -8,9 +8,9 @@ use crate::scene::Scene;
 use crate::vec3::Vec3;
 use clap::App;
 use rand::Rng;
+use rayon::prelude::*;
 use std::io::{Error as IoError, ErrorKind as IoErrorKind, Result as IoResult};
 use std::sync::Arc;
-use std::thread;
 
 #[macro_use]
 extern crate clap;
@@ -187,95 +187,35 @@ fn main() -> IoResult<()> {
     ));
 
     // Scene
-    let scene = Arc::new(random_scene());
-
-    struct Job {
-        x: u32,
-        y: u32,
-    }
-
-    struct Result {
-        x: u32,
-        y: u32,
-        color: Color,
-    }
-
-    let (job_sender, job_receiver) = crossbeam::channel::unbounded::<Job>();
-    let (result_sender, result_receiver) = crossbeam::channel::unbounded::<Result>();
-
-    let mut thread_handles = vec![];
-    for _ in 0..num_cpus::get() {
-        let job_receiver = job_receiver.clone();
-        let result_sender = result_sender.clone();
-        let scene = Arc::clone(&scene);
-        let camera = Arc::clone(&camera);
-
-        thread_handles.push(thread::spawn(move || {
-            while let Ok(next_job) = job_receiver.recv() {
-                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-
-                for _ in 0..samples_per_pixel {
-                    let rand_num1 = rand::thread_rng().gen_range(0.0..1.0);
-                    let rand_num2 = rand::thread_rng().gen_range(0.0..1.0);
-                    let u = (next_job.x as f64 + rand_num1) / (image_width as f64 - 1.0);
-                    let v = (next_job.y as f64 + rand_num2) / (image_height as f64 - 1.0);
-                    let ray = camera.get_ray(u, v);
-                    pixel_color += ray_color(&ray, &scene, max_depth);
-                }
-
-                // TODO: Fix this bit up
-                let scale = 1.0 / samples_per_pixel as f64;
-                pixel_color.red = (scale * pixel_color.red).sqrt().clamp(0.0, 0.9999999);
-                pixel_color.green = (scale * pixel_color.green).sqrt().clamp(0.0, 0.9999999);
-                pixel_color.blue = (scale * pixel_color.blue).sqrt().clamp(0.0, 0.9999999);
-
-                result_sender
-                    .send(Result {
-                        x: next_job.x,
-                        y: next_job.y,
-                        color: pixel_color,
-                    })
-                    .expect("Tried writing to channel, but there are no receivers!");
-            }
-        }));
-    }
-    drop(result_sender);
-
-    for y in 0..image_height {
-        for x in 0..image_width {
-            job_sender
-                .send(Job { x, y })
-                .expect("Tried writing to channel, but there are no receivers!");
-        }
-    }
-    drop(job_sender);
+    let scene = random_scene();
 
     let image_data_size = (image_width * image_height) as usize;
-    let mut image_data = Vec::<Color>::with_capacity(image_data_size);
 
-    image_data.resize_with(image_data_size, Default::default);
+    let image_data: Vec<Color> = (0..image_data_size)
+        .into_par_iter()
+        .rev()
+        .map(|idx| {
+            let x = idx as u32 % image_width;
+            let y = idx as u32 / image_width;
+            let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
-    let mut processed = 0;
-    let total = image_width * image_height;
-    let percent = (total as f64 / 100.0).ceil() as i32;
-    while let Ok(next_result) = result_receiver.recv() {
-        processed += 1;
-        if processed % (percent * 5) == 0 {
-            let percentage = (100.0 * (processed as f64 / total as f64)).floor() as i32;
-            println!("{}% completed", percentage);
-        }
-        // Flip you. Flip you for real.
-        let y = image_height - 1 - next_result.y;
-        let index = (y * image_width + next_result.x) as usize;
-        // TODO: stream data to the file... somehow
-        // stuff's gonna be out of order though, so this
-        // will likely be a bit messy
-        image_data[index] = next_result.color;
-    }
+            for _ in 0..samples_per_pixel {
+                let rand_num1 = rand::thread_rng().gen_range(0.0..1.0);
+                let rand_num2 = rand::thread_rng().gen_range(0.0..1.0);
+                let u = (x as f64 + rand_num1) / (image_width as f64 - 1.0);
+                let v = (y as f64 + rand_num2) / (image_height as f64 - 1.0);
+                let ray = camera.get_ray(u, v);
+                pixel_color += ray_color(&ray, &scene, max_depth);
+            }
 
-    for handle in thread_handles {
-        handle.join().expect("Panic occurred in thread")
-    }
+            // TODO: Fix this bit up
+            let scale = 1.0 / samples_per_pixel as f64;
+            pixel_color.red = (scale * pixel_color.red).sqrt().clamp(0.0, 0.9999999);
+            pixel_color.green = (scale * pixel_color.green).sqrt().clamp(0.0, 0.9999999);
+            pixel_color.blue = (scale * pixel_color.blue).sqrt().clamp(0.0, 0.9999999);
+            pixel_color
+        })
+        .collect();
 
     let ppm_image = PPM {
         image_width,
