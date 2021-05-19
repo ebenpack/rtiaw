@@ -50,14 +50,16 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Color {
     let mut depth = depth;
     let mut color = Color::new(1.0, 1.0, 1.0);
 
+    let mut scattered = Ray::new(Vec3::origin(), Vec3::origin());
+    let mut attenuation = Color::new(0.0, 0.0, 0.0);
+    let black = Color::new(0.0, 0.0, 0.0);
+
     loop {
         if depth <= 0 {
-            color *= Color::new(0.0, 0.0, 0.0);
+            color *= black;
             return color;
         }
         if scene.hit(&ray, 0.001, f64::INFINITY, &mut hit_record) {
-            let mut scattered = Ray::new(Vec3::origin(), Vec3::origin());
-            let mut attenuation = Color::new(0.0, 0.0, 0.0);
             if hit_record
                 .material
                 .scatter(&ray, &hit_record, &mut attenuation, &mut scattered)
@@ -67,7 +69,7 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Color {
                 depth -= 1;
                 continue;
             }
-            color += Color::new(0.0, 0.0, 0.0);
+            color += black;
             return color;
         }
         let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, &ray);
@@ -79,7 +81,7 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Color {
         }
         let unit_direction = Vec3::unit_vector(&ray.direction);
         let t = 0.5 * (unit_direction.y + 1.0);
-        color *= (1.0 - t) * &Color::new(1.0, 1.0, 1.0) + t * &Color::new(0.5, 0.7, 1.0);
+        color *= (1.0 - t) * &black + t * &Color::new(0.5, 0.7, 1.0);
         return color;
     }
 }
