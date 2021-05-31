@@ -3,6 +3,7 @@ use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Div;
 use std::ops::DivAssign;
+use std::ops::Index;
 use std::ops::Mul;
 use std::ops::MulAssign;
 use std::ops::Neg;
@@ -198,6 +199,18 @@ impl Div<f64> for Vec3 {
 
     fn div(self, rhs: f64) -> Self::Output {
         (1.0 / rhs) * &self
+    }
+}
+
+impl Index<usize> for Vec3 {
+    type Output = f64;
+    fn index(&self, idx: usize) -> &f64 {
+        match idx {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("unknown field: {}", idx),
+        }
     }
 }
 

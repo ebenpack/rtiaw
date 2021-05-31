@@ -2,7 +2,7 @@ use crate::camera::Camera;
 use crate::color::Color;
 use crate::image::{Image, PPM};
 use crate::material::{Dielectric, Lambertian, Metal};
-use crate::object::{HitRecord, Object, Sphere};
+use crate::object::{HitRecord, Object, ObjectList, Sphere};
 use crate::ray::Ray;
 use crate::scene::Scene;
 use crate::vec3::Vec3;
@@ -15,6 +15,7 @@ use std::sync::Arc;
 #[macro_use]
 extern crate clap;
 
+mod aabb;
 mod camera;
 mod color;
 mod image;
@@ -38,21 +39,22 @@ fn hit_sphere(center: &Vec3, radius: f64, r: &Ray) -> f64 {
     }
 }
 
-fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Color {
+fn ray_color(ray: &Ray, scene: &Scene, mut depth: u32) -> Color {
     let mut hit_record = HitRecord {
         p: Vec3::origin(),
         normal: Vec3::origin(),
         t: 0.0,
         front_face: false,
-        material: Arc::new(Metal::new(Color::new(0.0, 0.0, 0.0), 1.0)),
+        material: Arc::new(Metal::new(Color::default(), 1.0)),
     };
     let mut ray = ray.clone();
-    let mut depth = depth;
-    let mut color = Color::new(1.0, 1.0, 1.0);
 
-    let mut scattered = Ray::new(Vec3::origin(), Vec3::origin());
-    let mut attenuation = Color::new(0.0, 0.0, 0.0);
+    let origin = Vec3::origin();
     let black = Color::new(0.0, 0.0, 0.0);
+    let mut color = Color::new(1.0, 1.0, 1.0);
+    let mut scattered = Ray::new(origin, origin);
+    let mut attenuation = Color::default();
+    let center = Vec3::new(0.0, 0.0, -1.0);
 
     loop {
         if depth <= 0 {
@@ -72,9 +74,9 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Color {
             color += black;
             return color;
         }
-        let t = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, &ray);
+        let t = hit_sphere(&center, 0.5, &ray);
         if t > 0.0 {
-            let n = Vec3::unit_vector(&(ray.at(t) - Vec3::new(0.0, 0.0, -1.0)));
+            let n = Vec3::unit_vector(&(ray.at(t) - center));
 
             color *= 0.5 * &Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0);
             return color;
@@ -87,10 +89,10 @@ fn ray_color(ray: &Ray, scene: &Scene, depth: u32) -> Color {
 }
 
 fn random_scene() -> Scene {
-    let mut scene = Scene::new();
+    let mut scene_objects: Vec<Arc<dyn Object + Send + Sync>> = vec![];
 
     let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    scene.add(Arc::new(Sphere::new(
+    scene_objects.push(Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
         ground_material,
@@ -109,44 +111,44 @@ fn random_scene() -> Scene {
                     // diffuse
                     let albedo = Color::random(0.0, 1.0) * Color::random(0.0, 1.0);
                     let sphere_material = Arc::new(Lambertian::new(albedo));
-                    scene.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    scene_objects.push(Arc::new(Sphere::new(center, 0.2, sphere_material)));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random(0.5, 1.0);
                     let fuzz = rand::thread_rng().gen_range(0.0..0.5);
                     let sphere_material = Arc::new(Metal::new(albedo, fuzz));
-                    scene.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    scene_objects.push(Arc::new(Sphere::new(center, 0.2, sphere_material)));
                 } else {
                     // glass
                     let sphere_material = Arc::new(Dielectric::new(1.5));
-                    scene.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    scene_objects.push(Arc::new(Sphere::new(center, 0.2, sphere_material)));
                 }
             }
         }
     }
 
     let material1 = Arc::new(Dielectric::new(1.5));
-    scene.add(Arc::new(Sphere::new(
+    scene_objects.push(Arc::new(Sphere::new(
         Vec3::new(0.0, 1.0, 0.0),
         1.0,
         material1,
     )));
 
     let material2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    scene.add(Arc::new(Sphere::new(
+    scene_objects.push(Arc::new(Sphere::new(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
         material2,
     )));
 
     let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    scene.add(Arc::new(Sphere::new(
+    scene_objects.push(Arc::new(Sphere::new(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
         material3,
     )));
 
-    scene
+    Scene::new(&mut ObjectList::new(scene_objects))
 }
 
 fn main() -> IoResult<()> {
@@ -202,8 +204,9 @@ fn main() -> IoResult<()> {
             let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
             for _ in 0..samples_per_pixel {
-                let rand_num1 = rand::thread_rng().gen_range(0.0..1.0);
-                let rand_num2 = rand::thread_rng().gen_range(0.0..1.0);
+                let mut thread_rng = rand::thread_rng();
+                let rand_num1 = thread_rng.gen_range(0.0..1.0);
+                let rand_num2 = thread_rng.gen_range(0.0..1.0);
                 let u = (x as f64 + rand_num1) / (image_width as f64 - 1.0);
                 let v = (y as f64 + rand_num2) / (image_height as f64 - 1.0);
                 let ray = camera.get_ray(u, v);

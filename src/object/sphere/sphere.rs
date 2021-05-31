@@ -1,3 +1,4 @@
+use crate::aabb::AABB;
 use crate::material::Material;
 use crate::object::{HitRecord, Object};
 use crate::ray::Ray;
@@ -49,5 +50,12 @@ impl Object for Sphere {
         rec.material = self.material.clone();
 
         true
+    }
+
+    fn bounding_box(&self, _time0: f64, _time1: f64) -> Option<AABB> {
+        Some(AABB::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
+        ))
     }
 }
